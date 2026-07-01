@@ -1,0 +1,2 @@
+candidate_id,algorithm,feature_set,params,n_clusters,silhouette_score,davies_bouldin_score,calinski_harabasz_score,inertia,noise_ratio,acceptable_noise,valid_candidate,preferred_cluster_count
+0,dbscan,numeric_only,"{""eps"": 10, ""min_samples"": 2}",1,,,,,0.0,True,False,False

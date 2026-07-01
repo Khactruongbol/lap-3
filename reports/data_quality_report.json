@@ -1,0 +1,75 @@
+{
+  "raw_shape": [
+    200,
+    5
+  ],
+  "clean_shape": [
+    200,
+    5
+  ],
+  "raw_columns": [
+    "CustomerID",
+    "Gender",
+    "Age",
+    "Annual Income (k$)",
+    "Spending Score (1-100)"
+  ],
+  "canonical_columns": [
+    "customer_id",
+    "gender",
+    "age",
+    "annual_income_k",
+    "spending_score"
+  ],
+  "missing_values_raw": {
+    "CustomerID": 0,
+    "Gender": 0,
+    "Age": 0,
+    "Annual Income (k$)": 0,
+    "Spending Score (1-100)": 0
+  },
+  "duplicated_rows_raw": 0,
+  "duplicated_customer_id_raw": 0,
+  "gender_distribution": {
+    "Female": 112,
+    "Male": 88
+  },
+  "numeric_describe": {
+    "age": {
+      "count": 200.0,
+      "mean": 38.85,
+      "std": 13.96900733155888,
+      "min": 18.0,
+      "25%": 28.75,
+      "50%": 36.0,
+      "75%": 49.0,
+      "max": 70.0
+    },
+    "annual_income_k": {
+      "count": 200.0,
+      "mean": 60.56,
+      "std": 26.264721165271244,
+      "min": 15.0,
+      "25%": 41.5,
+      "50%": 61.5,
+      "75%": 78.0,
+      "max": 137.0
+    },
+    "spending_score": {
+      "count": 200.0,
+      "mean": 50.2,
+      "std": 25.823521668370173,
+      "min": 1.0,
+      "25%": 34.75,
+      "50%": 50.0,
+      "75%": 73.0,
+      "max": 99.0
+    }
+  },
+  "outlier_counts_iqr": {
+    "age": 0,
+    "annual_income_k": 2,
+    "spending_score": 0
+  },
+  "issues_file": null
+}

@@ -1,0 +1,21 @@
+{
+  "raw_shape": [
+    541909,
+    8
+  ],
+  "clean_shape": [
+    397884,
+    9
+  ],
+  "removed_rows": 144025,
+  "issue_counts": {
+    "cancellation": 9288,
+    "missing_customer_id": 135080,
+    "non_positive_quantity": 10624,
+    "non_positive_unit_price": 2517,
+    "malformed_invoice_date": 0
+  },
+  "customer_count": 4338,
+  "invoice_count": 18532,
+  "country_count": 37
+}

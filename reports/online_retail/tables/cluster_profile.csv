@@ -1,0 +1,4 @@
+cluster_id,size,percentage,mean_recency_days,mean_frequency,mean_monetary_value,mean_average_order_value,segment_name,business_interpretation
+0,2,0.04610419548178884,163.5,1.5,122828.05,80709.925,At-Risk Low-Frequency Customers,"Cluster 0 contains 0.0% of customers. Mean recency is 163.5 days, mean frequency is 1.5 invoices, and mean monetary value is 122828.1."
+1,1,0.02305209774089442,1.0,201.0,143825.06,715.5475621890547,Recent High-Value Customers,"Cluster 1 contains 0.0% of customers. Mean recency is 1.0 days, mean frequency is 201.0 invoices, and mean monetary value is 143825.1."
+2,4335,99.93084370677732,92.52479815455594,4.227912341407151,1965.8423861591698,382.0548941232248,Frequent High-Value Customers,"Cluster 2 contains 99.9% of customers. Mean recency is 92.5 days, mean frequency is 4.2 invoices, and mean monetary value is 1965.8."
