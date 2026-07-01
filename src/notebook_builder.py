@@ -2,24 +2,26 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from typing import Any
 
-from config import FINAL_NOTEBOOK
+import pandas as pd
+
+from config import (
+    BEST_MODEL_JSON,
+    CLUSTER_PROFILE_CSV,
+    DATA_QUALITY_REPORT,
+    DATA_SOURCE_LOG,
+    FINAL_NOTEBOOK,
+    ONLINE_RETAIL_BEST_MODEL_JSON,
+    ONLINE_RETAIL_CLUSTER_PROFILE_CSV,
+    ONLINE_RETAIL_QUALITY_REPORT,
+)
 
 
 def _markdown(source: str) -> dict:
     return {
         "cell_type": "markdown",
         "metadata": {},
-        "source": [line + "\n" for line in source.strip().splitlines()],
-    }
-
-
-def _code(source: str) -> dict:
-    return {
-        "cell_type": "code",
-        "execution_count": None,
-        "metadata": {},
-        "outputs": [],
         "source": [line + "\n" for line in source.strip().splitlines()],
     }
 
@@ -34,6 +36,60 @@ def _image_cell(title: str, relative_path: str, explanation: str) -> dict:
 {explanation}
 """
     )
+
+
+def _read_json(path: Path) -> dict[str, Any]:
+    if not path.exists():
+        return {}
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
+def _read_csv(path: Path) -> pd.DataFrame:
+    if not path.exists():
+        return pd.DataFrame()
+    return pd.read_csv(path, encoding="utf-8")
+
+
+def _table(df: pd.DataFrame, columns: list[str] | None = None, max_rows: int | None = None) -> str:
+    if df.empty:
+        return "_No data available._"
+    data = df.copy()
+    if columns is not None:
+        data = data[[column for column in columns if column in data.columns]]
+    if max_rows is not None:
+        data = data.head(max_rows)
+    headers = data.columns.tolist()
+    lines = [
+        "| " + " | ".join(headers) + " |",
+        "| " + " | ".join(["---"] * len(headers)) + " |",
+    ]
+    for _, row in data.iterrows():
+        values = []
+        for column in headers:
+            value = row[column]
+            if isinstance(value, float):
+                values.append(f"{value:.4f}".rstrip("0").rstrip("."))
+            else:
+                values.append(str(value).replace("\n", " "))
+        lines.append("| " + " | ".join(values) + " |")
+    return "\n".join(lines)
+
+
+def _best_model_summary(best: dict[str, Any]) -> str:
+    if not best:
+        return "_Best model metadata is not available._"
+    rows = pd.DataFrame(
+        [
+            {"Metric": "Algorithm", "Value": best.get("algorithm", "N/A")},
+            {"Metric": "Feature set", "Value": best.get("feature_set", "N/A")},
+            {"Metric": "Parameters", "Value": best.get("params", "N/A")},
+            {"Metric": "Number of clusters", "Value": best.get("n_clusters", "N/A")},
+            {"Metric": "Silhouette score", "Value": best.get("silhouette_score", "N/A")},
+            {"Metric": "Davies-Bouldin score", "Value": best.get("davies_bouldin_score", "N/A")},
+            {"Metric": "Calinski-Harabasz score", "Value": best.get("calinski_harabasz_score", "N/A")},
+        ]
+    )
+    return _table(rows)
 
 
 MALL_FIGURES = [
@@ -185,14 +241,22 @@ ONLINE_RETAIL_FIGURES = [
 
 
 def write_final_notebook() -> Path:
+    mall_quality = _read_json(DATA_QUALITY_REPORT)
+    online_quality = _read_json(ONLINE_RETAIL_QUALITY_REPORT)
+    mall_best = _read_json(BEST_MODEL_JSON)
+    online_best = _read_json(ONLINE_RETAIL_BEST_MODEL_JSON)
+    sources = _read_csv(DATA_SOURCE_LOG)
+    mall_profile = _read_csv(CLUSTER_PROFILE_CSV)
+    online_profile = _read_csv(ONLINE_RETAIL_CLUSTER_PROFILE_CSV)
+
     cells = [
         _markdown(
             """
 # Final Notebook - Customer Segmentation Clustering
 
-Notebook này tổng hợp đầy đủ chương trình phân cụm khách hàng theo yêu cầu Practice Exercise 3. Cấu trúc được viết theo dạng lab notebook: nêu vấn đề, dữ liệu, làm sạch, EDA, scaling, training, đánh giá model, test, giao diện Python và kết luận.
+Notebook này chỉ dùng **hình ảnh, bảng tóm tắt và giải thích**, không chứa code cell. Mục tiêu là giúp kiểm soát toàn bộ chương trình và model một cách trực quan như một bản báo cáo Lab 3 hoàn chỉnh.
 
-Dataset chính để chấm bài là **Mall Customers** vì có đúng các feature trong đề: `Age`, `Gender`, `Annual Income (k$)`, `Spending Score (1-100)`. Dataset **UCI Online Retail** được dùng như track mở rộng để có thêm raw transaction data và tạo RFM segmentation, không merge trực tiếp với Mall Customers vì không cùng customer ID/schema.
+Dataset chính để chấm bài là **Mall Customers** vì có đúng các feature trong đề: `Age`, `Gender`, `Annual Income (k$)`, `Spending Score (1-100)`. Dataset **UCI Online Retail** là phần mở rộng raw transaction data để tạo RFM segmentation, không merge trực tiếp với Mall Customers vì không cùng customer ID/schema.
 """
         ),
         _markdown(
@@ -201,7 +265,7 @@ Dataset chính để chấm bài là **Mall Customers** vì có đúng các feat
 
 ### Problem Statement
 
-Ta có một tập dữ liệu khách hàng của cửa hàng bán lẻ gồm thông tin tuổi, giới tính, thu nhập hằng năm và spending score. Mục tiêu là **phân cụm khách hàng dựa trên mức độ tương đồng** để tìm ra các customer segments khác biệt.
+Ta có dữ liệu khách hàng của một cửa hàng bán lẻ gồm tuổi, giới tính, thu nhập hằng năm và spending score. Nhiệm vụ là **phân cụm khách hàng theo mức độ tương đồng** để tìm ra các customer segments khác biệt.
 
 ### Machine Learning Type
 
@@ -210,205 +274,105 @@ Ta có một tập dữ liệu khách hàng của cửa hàng bán lẻ gồm th
 - Không dùng classification hoặc regression.
 - Model không dự đoán nhãn có sẵn; model tự tìm cấu trúc cụm dựa trên feature similarity.
 
-### Input Features Chính
-
-| Feature | Meaning | Usage |
-| --- | --- | --- |
-| `age` | Tuổi khách hàng | Numeric clustering feature |
-| `gender` | Giới tính | One-hot optional feature để so sánh |
-| `annual_income_k` | Thu nhập hằng năm, đơn vị nghìn USD | Numeric clustering feature |
-| `spending_score` | Điểm chi tiêu 1-100 | Numeric clustering feature |
-
 ### Expected Output
 
-Kết quả cuối cần có:
-
-- Số lượng cụm hợp lý.
+- Số cụm hợp lý.
 - Bảng profile từng cụm.
 - Tên segment dễ hiểu.
-- Biểu đồ scatter/dendrogram/heatmap để kiểm soát trực quan.
-- Metric đánh giá clustering như silhouette, Davies-Bouldin và Calinski-Harabasz.
-"""
-        ),
-        _code(
-            """
-import json
-from pathlib import Path
-
-import joblib
-import pandas as pd
-
-root = Path.cwd()
-if not (root / "data").exists():
-    root = Path("..").resolve()
-pd.set_option("display.max_columns", 100)
+- Hình scatter, dendrogram, heatmap để kiểm soát trực quan.
+- Metric đánh giá clustering: silhouette, Davies-Bouldin, Calinski-Harabasz.
 """
         ),
         _markdown(
-            """
-## 2. Raw Data Sources
+            f"""
+## 2. Data Sources
 
 Chương trình sử dụng hai nguồn raw data:
 
-1. **Mall Customers**: nguồn chính đúng đề bài, có age/gender/income/spending score.
-2. **UCI Online Retail**: nguồn mở rộng dạng transaction log, dùng để tạo RFM features.
+{_table(sources, ["source_name", "url", "access_method", "download_date", "local_file"], max_rows=10)}
 
-Rule quan trọng: không merge hai nguồn này theo dòng vì customer ID không tương thích.
+**Quy tắc quan trọng:** Mall Customers là dataset chính đúng đề bài. Online Retail chỉ là track mở rộng RFM, không merge theo dòng với Mall Customers.
 """
         ),
-        _code(
-            """
-data_sources = pd.read_csv(root / "data_sources" / "data_links.csv")
-data_sources.tail(10)
+        _markdown(
+            f"""
+## 3. Data Cleaning Summary
+
+### Mall Customers
+
+- Raw shape: `{mall_quality.get("raw_shape", "N/A")}`
+- Clean shape: `{mall_quality.get("clean_shape", "N/A")}`
+- Missing values raw: `{mall_quality.get("missing_values_raw", "N/A")}`
+- IQR outlier counts: `{mall_quality.get("outlier_counts_iqr", "N/A")}`
+
+### Online Retail
+
+- Raw shape: `{online_quality.get("raw_shape", "N/A")}`
+- Clean shape: `{online_quality.get("clean_shape", "N/A")}`
+- Removed rows: `{online_quality.get("removed_rows", "N/A")}`
+- Issue counts: `{online_quality.get("issue_counts", "N/A")}`
+- Customer count after cleaning: `{online_quality.get("customer_count", "N/A")}`
 """
         ),
         _markdown(
             """
-## 3. Data Cleaning and Validation
+## 4. Mall Customers EDA
 
-### Mall Customers Cleaning
-
-- Kiểm tra đủ raw columns.
-- Chuẩn hóa tên cột thành `customer_id`, `gender`, `age`, `annual_income_k`, `spending_score`.
-- Kiểm tra missing values, duplicate rows, duplicate customer ID.
-- Validate range: age > 0, annual income >= 0, spending score nằm trong 1-100.
-
-### Online Retail Cleaning
-
-- Loại invoice cancellation.
-- Loại quantity <= 0.
-- Loại unit price <= 0.
-- Loại missing customer ID.
-- Loại malformed invoice date.
-- Tạo `line_total = quantity * unit_price`.
-- Aggregate thành RFM theo customer.
-"""
-        ),
-        _code(
-            """
-mall_quality = json.loads((root / "reports" / "data_quality_report.json").read_text(encoding="utf-8"))
-online_quality = json.loads((root / "reports" / "online_retail" / "online_retail_quality_report.json").read_text(encoding="utf-8"))
-
-mall_quality, online_quality
-"""
-        ),
-        _markdown(
-            """
-## 4. Load Processed Data
-
-Các file processed là dữ liệu đã được làm sạch và dùng cho EDA/training.
-"""
-        ),
-        _code(
-            """
-mall_clean = pd.read_csv(root / "data" / "processed" / "mall_customers_clean.csv")
-mall_clustered = pd.read_csv(root / "data" / "processed" / "mall_customers_clustered.csv")
-online_rfm = pd.read_csv(root / "data" / "processed" / "online_retail_rfm.csv")
-online_clustered = pd.read_csv(root / "data" / "processed" / "online_retail_rfm_clustered.csv")
-
-print("Mall clean shape:", mall_clean.shape)
-print("Mall clustered shape:", mall_clustered.shape)
-print("Online Retail RFM shape:", online_rfm.shape)
-print("Online Retail clustered shape:", online_clustered.shape)
-mall_clean.head()
-"""
-        ),
-        _markdown(
-            """
-## 5. Exploratory Data Analysis - Mall Customers
-
-Phần này quan sát phân bố dữ liệu và quan hệ giữa các feature chính trước khi clustering.
+Các hình dưới đây giải thích dữ liệu chính trước khi train model. Đây là phần cần kiểm soát để biết dữ liệu có missing/outlier/phân bố bất thường hay không.
 """
         ),
     ]
+
     cells.extend(_image_cell(*figure) for figure in MALL_FIGURES[:9])
-    cells.extend(
-        [
-            _markdown(
-                """
-## 6. Feature Scaling
+    cells.append(
+        _markdown(
+            """
+## 5. Feature Scaling and Model Training
 
-Clustering dựa trên khoảng cách, nên các feature numeric cần được scale trước khi train model. Nếu không scale, feature có thang đo lớn hơn như annual income có thể chi phối khoảng cách.
+Clustering dựa trên khoảng cách, vì vậy các feature numeric được chuẩn hóa bằng `StandardScaler`.
 
-Chương trình dùng:
+Feature sets được so sánh:
 
-- `StandardScaler`
-- Feature set 1: `numeric_only`
-- Feature set 2: `numeric_plus_gender`
-- `customer_id` luôn bị loại khỏi feature matrix.
+- `numeric_only`: `age`, `annual_income_k`, `spending_score`.
+- `numeric_plus_gender`: numeric features + one-hot encoded gender.
+
+Algorithms được train:
+
+- K-Means.
+- Agglomerative/Hierarchical Clustering.
+- DBSCAN.
+
+Model cuối không được chọn chỉ theo metric. Chương trình ưu tiên model có metric tốt nhưng vẫn dễ giải thích và không bỏ quá nhiều khách hàng vào noise.
 """
-            ),
-            _markdown(
-                """
-## 7. Train Clustering Models
+        )
+    )
+    cells.append(
+        _markdown(
+            f"""
+## 6. Best Mall Customers Model
 
-Các thuật toán được thử nghiệm:
+{_best_model_summary(mall_best)}
 
-- K-Means với `k=2..10`.
-- Agglomerative/Hierarchical Clustering với nhiều linkage.
-- DBSCAN với grid `eps` và `min_samples`.
+### Mall Customers Cluster Profile
 
-Metrics:
-
-- `silhouette_score`: càng cao càng tốt.
-- `davies_bouldin_score`: càng thấp càng tốt.
-- `calinski_harabasz_score`: càng cao càng tốt.
-- `inertia`: dùng cho K-Means elbow plot.
-- `noise_ratio`: dùng cho DBSCAN.
+{_table(mall_profile)}
 """
-            ),
-            _code(
-                """
-mall_metrics = pd.read_csv(root / "reports" / "metrics" / "clustering_metrics.csv")
-online_metrics = pd.read_csv(root / "reports" / "online_retail" / "metrics" / "clustering_metrics.csv")
+        )
+    )
+    cells.append(
+        _markdown(
+            """
+## 7. Mall Customers Model Evaluation Figures
 
-mall_metrics[mall_metrics["valid_candidate"]].sort_values("silhouette_score", ascending=False).head(10)
+Các hình dưới đây dùng để kiểm soát quá trình chọn số cụm, so sánh model và giải thích kết quả phân cụm cuối.
 """
-            ),
-            _markdown(
-                """
-## 8. Mall Customers Model Evaluation Figures
-
-Các hình dưới đây dùng để kiểm soát quá trình chọn số cụm và kiểm tra kết quả phân cụm cuối.
-"""
-            ),
-        ]
+        )
     )
     cells.extend(_image_cell(*figure) for figure in MALL_FIGURES[9:])
-    cells.extend(
-        [
-            _markdown(
-                """
-## 9. Best Mall Customers Model and Segment Profile
-
-Model cuối cho dataset chính được chọn theo metric và khả năng giải thích. Trong bài này, model chính là kết quả cần trình bày cho đề Practice Exercise 3.
-"""
-            ),
-            _code(
-                """
-mall_best = json.loads((root / "reports" / "metrics" / "best_model.json").read_text(encoding="utf-8"))
-mall_profile = pd.read_csv(root / "reports" / "tables" / "cluster_profile.csv")
-
-mall_best_summary = {
-    "algorithm": mall_best["algorithm"],
-    "feature_set": mall_best["feature_set"],
-    "params": mall_best["params"],
-    "n_clusters": mall_best["n_clusters"],
-    "silhouette_score": mall_best["silhouette_score"],
-    "davies_bouldin_score": mall_best["davies_bouldin_score"],
-    "calinski_harabasz_score": mall_best["calinski_harabasz_score"],
-}
-mall_best_summary
-"""
-            ),
-            _code(
-                """
-mall_profile
-"""
-            ),
-            _markdown(
-                """
-### Mall Segment Interpretation
+    cells.append(
+        _markdown(
+            """
+## 8. Mall Segment Interpretation
 
 - `Average Income - Average Spending`: nhóm khách hàng trung bình, phù hợp cho chiến lược duy trì.
 - `High Income - High Spending`: nhóm giá trị cao, có thể ưu tiên chăm sóc hoặc loyalty program.
@@ -416,134 +380,84 @@ mall_profile
 - `High Income - Low Spending`: nhóm có tiềm năng nhưng chưa chi tiêu nhiều, cần phân tích động lực mua hàng.
 - `Low Income - Low Spending`: nhóm chi tiêu thấp, phù hợp ưu đãi nhỏ hoặc sản phẩm phổ thông.
 """
-            ),
-            _markdown(
-                """
-## 10. Extended EDA - Online Retail RFM
+        )
+    )
+    cells.append(
+        _markdown(
+            """
+## 9. Online Retail RFM Extension
 
-Track Online Retail dùng dữ liệu giao dịch thô để tạo RFM features:
+Track Online Retail dùng raw transaction data để tạo RFM features:
 
 - `recency_days`: số ngày từ lần mua gần nhất.
 - `frequency`: số invoice duy nhất.
 - `monetary_value`: tổng giá trị mua hàng.
 - `average_order_value`: giá trị trung bình mỗi invoice.
+
+Track này chứng minh chương trình có thể mở rộng sang dữ liệu giao dịch thật, nhưng kết quả chính của đề vẫn là Mall Customers.
 """
-            ),
-        ]
+        )
+    )
+    cells.append(
+        _markdown(
+            f"""
+## 10. Best Online Retail RFM Model
+
+{_best_model_summary(online_best)}
+
+### Online Retail RFM Cluster Profile
+
+{_table(online_profile)}
+"""
+        )
     )
     cells.extend(_image_cell(*figure) for figure in ONLINE_RETAIL_FIGURES)
-    cells.extend(
-        [
-            _markdown(
-                """
-## 11. Online Retail RFM Model and Profile
+    cells.append(
+        _markdown(
+            """
+## 11. Program and Model Summary
 
-Track này không thay thế bài Mall Customers, mà chứng minh chương trình có thể mở rộng sang raw transaction data và tạo segmentation bằng RFM.
+### Source Structure
+
+- `src/data_acquisition.py`: tải raw data Mall Customers và UCI Online Retail.
+- `src/data_quality.py`: làm sạch và validate Mall Customers.
+- `src/online_retail.py`: làm sạch transaction và tạo RFM features.
+- `src/preprocessing.py`: scale feature sets.
+- `src/clustering.py`: train K-Means, Agglomerative, DBSCAN.
+- `src/evaluation.py`: tính metric và chọn model cuối.
+- `src/model_train.py`: lưu model artifact `.joblib`.
+- `app.py`: Streamlit UI chỉ đọc artifact, không retrain.
+
+### Model Artifacts
+
+- `models/customer_segmentation_pipeline.joblib`
+- `models/online_retail_segmentation_pipeline.joblib`
+
+### Validation Commands
+
+- `python -m compileall -q config.py main.py app.py src tests`
+- `python -m pytest -q`
+- `python -m json.tool notebooks/99_customer_segmentation_workflow.ipynb`
 """
-            ),
-            _code(
-                """
-online_best = json.loads((root / "reports" / "online_retail" / "metrics" / "best_model.json").read_text(encoding="utf-8"))
-online_profile = pd.read_csv(root / "reports" / "online_retail" / "tables" / "cluster_profile.csv")
+        )
+    )
+    cells.append(
+        _markdown(
+            """
+## 12. Final Conclusion
 
-online_best_summary = {
-    "algorithm": online_best["algorithm"],
-    "feature_set": online_best["feature_set"],
-    "params": online_best["params"],
-    "n_clusters": online_best["n_clusters"],
-    "silhouette_score": online_best["silhouette_score"],
-}
-online_best_summary
+Chương trình đã đáp ứng các yêu cầu:
+
+- Tìm kiếm thêm raw data.
+- Lọc sạch data.
+- Train clustering models.
+- Viết tests cho data/model/UI/notebook.
+- Có giao diện Python bằng Streamlit.
+- Có notebook cuối chỉ chứa hình ảnh và giải thích để kiểm soát chương trình/model.
+
+Kết quả chính để trình bày là **Mall Customers segmentation**. Online Retail RFM là phần mở rộng để tăng độ đầy đủ về raw data và workflow thực tế.
 """
-            ),
-            _code(
-                """
-online_profile
-"""
-            ),
-            _markdown(
-                """
-## 12. Saved Model Artifacts
-
-Chương trình lưu model metadata, scaler, feature names, labels và đường dẫn profile/metrics bằng Joblib.
-"""
-            ),
-            _code(
-                """
-mall_model = joblib.load(root / "models" / "customer_segmentation_pipeline.joblib")
-online_model = joblib.load(root / "models" / "online_retail_segmentation_pipeline.joblib")
-
-{
-    "mall_model_keys": sorted(mall_model.keys()),
-    "online_model_keys": sorted(online_model.keys()),
-}
-"""
-            ),
-            _markdown(
-                """
-## 13. Model Tests
-
-Các phần test đã được viết trong thư mục `tests/`:
-
-- Schema validation cho Mall Customers.
-- Online Retail cleaning và RFM builder.
-- Clustering edge cases.
-- Model artifact metadata.
-- App import không retrain.
-- Notebook sections.
-
-Lệnh kiểm tra:
-
-```powershell
-python -m compileall -q config.py main.py app.py src tests
-python -m pytest -q
-python -m json.tool notebooks/99_customer_segmentation_workflow.ipynb > $null
-```
-"""
-            ),
-            _markdown(
-                """
-## 14. Python UI
-
-Giao diện được viết bằng Streamlit trong file `app.py`.
-
-Chạy UI:
-
-```powershell
-streamlit run app.py
-```
-
-UI chỉ đọc artifact đã sinh sẵn:
-
-- best model JSON
-- metrics CSV
-- cluster profile CSV
-- clustered data preview
-- final Markdown report
-
-UI không retrain model khi load trang.
-"""
-            ),
-            _markdown(
-                """
-## 15. Final Conclusion
-
-Chương trình đã bám đúng trọng tâm đề bài:
-
-- Có raw data chuẩn.
-- Có bước làm sạch dữ liệu.
-- Có EDA với hình ảnh đầy đủ.
-- Có feature scaling.
-- Có train nhiều clustering algorithms.
-- Có evaluation metrics.
-- Có model tests.
-- Có Python UI.
-- Có final Jupyter notebook tổng hợp toàn bộ workflow.
-
-Kết quả chính để trình bày là Mall Customers segmentation. Online Retail RFM là phần mở rộng để tăng độ đầy đủ về raw data và workflow thực tế.
-"""
-            ),
-        ]
+        )
     )
 
     notebook = {

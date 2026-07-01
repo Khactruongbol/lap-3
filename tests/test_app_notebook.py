@@ -15,12 +15,13 @@ def test_final_notebook_contains_required_sections():
     notebook_path = Path("notebooks/99_customer_segmentation_workflow.ipynb")
     notebook = json.loads(notebook_path.read_text(encoding="utf-8"))
     text = "\n".join("".join(cell["source"]) for cell in notebook["cells"])
+    assert all(cell["cell_type"] == "markdown" for cell in notebook["cells"])
     for section in [
         "Define Problem",
-        "Raw Data Sources",
-        "Data Cleaning and Validation",
-        "Train Clustering Models",
-        "Python UI",
+        "Data Sources",
+        "Data Cleaning Summary",
+        "Feature Scaling and Model Training",
+        "Program and Model Summary",
         "Final Conclusion",
     ]:
         assert section in text
