@@ -17,6 +17,27 @@ from config import (
 from src.clustering import ClusteringCandidate
 
 
+def _interpretability_rank(candidate: ClusteringCandidate) -> int:
+    if candidate.algorithm == "kmeans":
+        return 0
+    if candidate.algorithm == "agglomerative":
+        linkage = candidate.params.get("linkage")
+        return {"ward": 1, "complete": 2, "average": 3, "single": 6}.get(str(linkage), 5)
+    if candidate.algorithm == "dbscan":
+        return 4
+    return 5
+
+
+def _feature_set_rank(feature_set_name: str) -> int:
+    return {
+        "income_spending": 0,
+        "rfm_log": 0,
+        "numeric_only": 1,
+        "rfm": 1,
+        "numeric_plus_gender": 2,
+    }.get(feature_set_name, 3)
+
+
 def _valid_metric_data(matrix: object, labels: np.ndarray, algorithm: str) -> tuple[np.ndarray, np.ndarray]:
     matrix_array = np.asarray(matrix)
     labels_array = np.asarray(labels)
@@ -70,6 +91,8 @@ def evaluate_candidates(
                 "acceptable_noise": bool(acceptable_noise),
                 "valid_candidate": bool(valid_candidate),
                 "preferred_cluster_count": bool(preferred_cluster_count),
+                "interpretability_rank": _interpretability_rank(candidate),
+                "feature_set_rank": _feature_set_rank(candidate.feature_set),
             }
         )
 
@@ -95,14 +118,18 @@ def select_best_candidate(
     ].copy()
     if close_candidates["preferred_cluster_count"].any():
         valid = close_candidates[close_candidates["preferred_cluster_count"]].copy()
+    else:
+        valid = close_candidates
     valid = valid.sort_values(
         by=[
+            "interpretability_rank",
+            "feature_set_rank",
             "silhouette_score",
             "preferred_rank",
             "davies_bouldin_score",
             "calinski_harabasz_score",
         ],
-        ascending=[False, False, True, False],
+        ascending=[True, True, False, False, True, False],
     )
     best_row = valid.iloc[0]
     best = candidates[int(best_row["candidate_id"])]

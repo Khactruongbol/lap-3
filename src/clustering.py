@@ -9,6 +9,9 @@ import pandas as pd
 from sklearn.cluster import AgglomerativeClustering, DBSCAN, KMeans
 
 from config import (
+    AGGLOMERATIVE_LARGE_DATA_K_RANGE,
+    AGGLOMERATIVE_LARGE_DATA_LINKAGES,
+    AGGLOMERATIVE_LARGE_DATA_THRESHOLD,
     CANDIDATES_CSV,
     CANDIDATES_JSON,
     DBSCAN_EPS_GRID,
@@ -80,10 +83,16 @@ def run_kmeans_grid(matrix: object, feature_set_name: str) -> list[ClusteringCan
 def run_agglomerative_grid(matrix: object, feature_set_name: str) -> list[ClusteringCandidate]:
     candidates: list[ClusteringCandidate] = []
     n_samples = len(matrix)
-    for k in K_RANGE:
+    if n_samples > AGGLOMERATIVE_LARGE_DATA_THRESHOLD:
+        k_values = AGGLOMERATIVE_LARGE_DATA_K_RANGE
+        linkages = AGGLOMERATIVE_LARGE_DATA_LINKAGES
+    else:
+        k_values = K_RANGE
+        linkages = ["ward", "complete", "average", "single"]
+    for k in k_values:
         if k >= n_samples:
             continue
-        for linkage in ["ward", "complete", "average", "single"]:
+        for linkage in linkages:
             model = AgglomerativeClustering(n_clusters=k, linkage=linkage)
             labels = model.fit_predict(matrix)
             candidates.append(

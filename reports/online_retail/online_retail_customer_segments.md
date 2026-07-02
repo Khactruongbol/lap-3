@@ -14,24 +14,23 @@ This is an extended raw-data track for customer segmentation. It uses UCI Online
 
 ## RFM Feature Summary
 
-Features used for clustering: `recency_days`, `frequency`, `monetary_value`, and `average_order_value`.
+Feature sets used for clustering: raw RFM features (`recency_days`, `frequency`, `monetary_value`, `average_order_value`) and log-transformed RFM features. The log-transformed set reduces the dominance of highly skewed transaction values.
 
 ## Model Comparison
 
-95 candidates evaluated; 66 candidates were valid.
+128 candidates evaluated; 71 candidates were valid.
 
 ## Best Model
 
-- Algorithm: agglomerative
+- Algorithm: kmeans
 - Feature set: rfm
-- Parameters: {"linkage": "single", "n_clusters": 3}
-- Number of clusters: 3
-- Silhouette score: 0.947344641998791
+- Parameters: {"n_clusters": 2, "random_state": 42}
+- Number of clusters: 2
+- Silhouette score: 0.9668333381045542
 
 ## Cluster Profile
 
 | cluster_id | size | percentage | mean_recency_days | mean_frequency | mean_monetary_value | mean_average_order_value | segment_name | business_interpretation |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| 0 | 2 | 0.046 | 163.5 | 1.5 | 122828.05 | 80709.925 | At-Risk Low-Frequency Customers | Cluster 0 contains 0.0% of customers. Mean recency is 163.5 days, mean frequency is 1.5 invoices, and mean monetary value is 122828.1. |
-| 1 | 1 | 0.023 | 1 | 201 | 143825.06 | 715.548 | Recent High-Value Customers | Cluster 1 contains 0.0% of customers. Mean recency is 1.0 days, mean frequency is 201.0 invoices, and mean monetary value is 143825.1. |
-| 2 | 4335 | 99.931 | 92.525 | 4.228 | 1965.842 | 382.055 | Frequent High-Value Customers | Cluster 2 contains 99.9% of customers. Mean recency is 92.5 days, mean frequency is 4.2 invoices, and mean monetary value is 1965.8. |
+| 0 | 4336 | 99.954 | 92.504 | 4.273 | 1998.559 | 382.132 | Frequent High-Value Customers | Cluster 0 contains 100.0% of customers. Mean recency is 92.5 days, mean frequency is 4.3 invoices, and mean monetary value is 1998.6. |
+| 1 | 2 | 0.046 | 163.5 | 1.5 | 122828.05 | 80709.925 | At-Risk Low-Frequency Customers | Cluster 1 contains 0.0% of customers. Mean recency is 163.5 days, mean frequency is 1.5 invoices, and mean monetary value is 122828.1. |

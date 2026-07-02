@@ -1,6 +1,7 @@
 import pandas as pd
 
-from src.online_retail import build_rfm_features, clean_online_retail_transactions
+import src.online_retail as online_retail
+from src.online_retail import build_rfm_features, clean_online_retail_transactions, load_or_process_online_retail
 
 
 def test_online_retail_cleaning_removes_invalid_rows():
@@ -36,3 +37,29 @@ def test_rfm_builder_returns_one_row_per_customer_with_non_negative_values():
     assert set(["recency_days", "frequency", "monetary_value", "average_order_value"]).issubset(rfm.columns)
     assert (rfm["frequency"] >= 1).all()
     assert (rfm["monetary_value"] >= 0).all()
+
+
+def test_online_retail_cache_uses_processed_rfm_when_fresh(tmp_path, monkeypatch):
+    raw_file = tmp_path / "Online Retail.xlsx"
+    raw_file.write_bytes(b"raw-placeholder")
+    clean_file = tmp_path / "online_retail_clean_transactions.csv"
+    clean_file.write_text("invoice_no\n1\n", encoding="utf-8")
+    rfm_file = tmp_path / "online_retail_rfm.csv"
+    pd.DataFrame(
+        {
+            "customer_id": [1],
+            "recency_days": [1],
+            "frequency": [1],
+            "monetary_value": [10.0],
+            "average_order_value": [10.0],
+            "last_purchase_date": ["2024-01-01"],
+        }
+    ).to_csv(rfm_file, index=False, encoding="utf-8")
+
+    monkeypatch.setattr(online_retail, "ONLINE_RETAIL_CLEAN_FILE", clean_file)
+    monkeypatch.setattr(online_retail, "ONLINE_RETAIL_RFM_FILE", rfm_file)
+
+    cached = load_or_process_online_retail(raw_file)
+
+    assert len(cached) == 1
+    assert cached.loc[0, "customer_id"] == 1

@@ -206,7 +206,7 @@ This project clusters retail-store customers using age, gender, annual income, a
 
 ## Feature Scaling Summary
 
-The pipeline compares two standardized feature sets: numerical features only, and numerical features plus one-hot encoded gender. `customer_id` is excluded from clustering.
+The pipeline compares three standardized feature sets: income-spending behavior features, numerical features only, and numerical features plus one-hot encoded gender. `customer_id` is excluded from clustering.
 
 ## Model Comparison
 
@@ -259,7 +259,7 @@ This is an extended raw-data track for customer segmentation. It uses UCI Online
 
 ## RFM Feature Summary
 
-Features used for clustering: `recency_days`, `frequency`, `monetary_value`, and `average_order_value`.
+Feature sets used for clustering: raw RFM features (`recency_days`, `frequency`, `monetary_value`, `average_order_value`) and log-transformed RFM features. The log-transformed set reduces the dominance of highly skewed transaction values.
 
 ## Model Comparison
 

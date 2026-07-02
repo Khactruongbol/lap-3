@@ -333,8 +333,11 @@ Clustering dựa trên khoảng cách, vì vậy các feature numeric được c
 
 Feature sets được so sánh:
 
+- `income_spending`: `annual_income_k`, `spending_score`; đây là feature set lõi cho phân khúc hành vi mua sắm của Mall Customers.
 - `numeric_only`: `age`, `annual_income_k`, `spending_score`.
 - `numeric_plus_gender`: numeric features + one-hot encoded gender.
+- `rfm`: `recency_days`, `frequency`, `monetary_value`, `average_order_value` cho Online Retail.
+- `rfm_log`: log-transformed RFM features để giảm ảnh hưởng của outlier giao dịch.
 
 Algorithms được train:
 
@@ -342,7 +345,7 @@ Algorithms được train:
 - Agglomerative/Hierarchical Clustering.
 - DBSCAN.
 
-Model cuối không được chọn chỉ theo metric. Chương trình ưu tiên model có metric tốt nhưng vẫn dễ giải thích và không bỏ quá nhiều khách hàng vào noise.
+Model cuối không được chọn chỉ theo metric. Chương trình ưu tiên model có metric tốt, số cụm trong khoảng dễ giải thích, feature set rõ ý nghĩa và hạn chế chọn `single linkage` khi có ứng viên gần tương đương vì `single linkage` dễ tạo hiệu ứng chaining.
 """
         )
     )

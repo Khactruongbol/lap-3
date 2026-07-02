@@ -158,6 +158,18 @@ def process_online_retail(raw_file: Path = RAW_ONLINE_RETAIL_FILE) -> pd.DataFra
     return build_rfm_features(cleaned, write_outputs=True)
 
 
+def load_or_process_online_retail(raw_file: Path = RAW_ONLINE_RETAIL_FILE, force: bool = False) -> pd.DataFrame:
+    if (
+        not force
+        and ONLINE_RETAIL_RFM_FILE.exists()
+        and ONLINE_RETAIL_CLEAN_FILE.exists()
+        and raw_file.exists()
+        and ONLINE_RETAIL_RFM_FILE.stat().st_mtime >= raw_file.stat().st_mtime
+    ):
+        return load_rfm_data(ONLINE_RETAIL_RFM_FILE)
+    return process_online_retail(raw_file)
+
+
 def load_rfm_data(rfm_file: Path = ONLINE_RETAIL_RFM_FILE) -> pd.DataFrame:
     if not rfm_file.exists():
         raise FileNotFoundError(

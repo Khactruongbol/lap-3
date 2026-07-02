@@ -6,7 +6,7 @@ from config import ensure_directories
 from src.data_acquisition import fetch_all_data, fetch_data, fetch_online_retail_data, require_raw_data
 from src.data_quality import clean_customer_data, load_clean_data
 from src.model_train import train_mall_model, train_online_retail_model
-from src.online_retail import process_online_retail
+from src.online_retail import load_or_process_online_retail
 from src.reporting import write_notebook_stub
 from src.visualization import generate_eda_figures, generate_rfm_eda_figures
 
@@ -17,17 +17,17 @@ def run_mall_eda() -> None:
     generate_eda_figures(clean_df)
 
 
-def run_online_retail_eda() -> None:
+def run_online_retail_eda(force_refresh: bool = False) -> None:
     raw_file = require_raw_data("online_retail")
-    rfm_df = process_online_retail(raw_file)
+    rfm_df = load_or_process_online_retail(raw_file, force=force_refresh)
     generate_rfm_eda_figures(rfm_df)
 
 
-def run_eda(dataset: str) -> None:
+def run_eda(dataset: str, force_refresh: bool = False) -> None:
     if dataset in {"mall", "all"}:
         run_mall_eda()
     if dataset in {"online_retail", "all"}:
-        run_online_retail_eda()
+        run_online_retail_eda(force_refresh=force_refresh)
 
 
 def train_model(dataset: str) -> None:
@@ -49,7 +49,7 @@ def fetch_selected_data(dataset: str, force_fetch: bool = False) -> None:
 
 def run_all(dataset: str, force_fetch: bool = False) -> None:
     fetch_selected_data(dataset, force_fetch)
-    run_eda(dataset)
+    run_eda(dataset, force_refresh=force_fetch)
     train_model(dataset)
 
 
@@ -79,7 +79,7 @@ def main() -> None:
     if args.fetch_data:
         fetch_selected_data(args.dataset, force_fetch=args.force_fetch)
     if args.run_eda:
-        run_eda(args.dataset)
+        run_eda(args.dataset, force_refresh=args.force_fetch)
     if args.run_clustering or args.train_model:
         train_model(args.dataset)
     if not any([args.fetch_data, args.run_eda, args.run_clustering, args.train_model, args.run_all]):

@@ -1,4 +1,13 @@
+import os
 from pathlib import Path
+
+
+os.environ.setdefault("OMP_NUM_THREADS", "1")
+os.environ.setdefault("OPENBLAS_NUM_THREADS", "1")
+os.environ.setdefault("MKL_NUM_THREADS", "1")
+os.environ.setdefault("VECLIB_MAXIMUM_THREADS", "1")
+os.environ.setdefault("NUMEXPR_NUM_THREADS", "1")
+os.environ.setdefault("LOKY_MAX_CPU_COUNT", "2")
 
 
 PROJECT_ROOT = Path(__file__).resolve().parent
@@ -80,6 +89,9 @@ DBSCAN_EPS_GRID = [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.2, 1.5]
 DBSCAN_MIN_SAMPLES_GRID = [3, 4, 5, 8, 10]
 MAX_DBSCAN_NOISE_RATIO = 0.10
 SILHOUETTE_CLOSE_TOLERANCE = 0.02
+AGGLOMERATIVE_LARGE_DATA_THRESHOLD = 1000
+AGGLOMERATIVE_LARGE_DATA_K_RANGE = range(2, 7)
+AGGLOMERATIVE_LARGE_DATA_LINKAGES = ["ward"]
 DATASET_CHOICES = {"mall", "online_retail", "all"}
 
 
