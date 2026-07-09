@@ -69,6 +69,21 @@ def generate_eda_figures(df: pd.DataFrame) -> None:
         _save_current_figure(FIGURES_DIR / filename)
 
 
+def generate_balance_figures(clean_df: pd.DataFrame, balanced_df: pd.DataFrame) -> None:
+    comparison = pd.concat(
+        [
+            clean_df[NUMERIC_FEATURES].assign(dataset="clean"),
+            balanced_df[NUMERIC_FEATURES].assign(dataset="balanced"),
+        ],
+        ignore_index=True,
+    )
+    melted = comparison.melt(id_vars="dataset", var_name="feature", value_name="value")
+    plt.figure(figsize=(9, 5))
+    sns.boxplot(data=melted, x="feature", y="value", hue="dataset")
+    plt.title("Mall Customers Data Balance: Before vs After")
+    _save_current_figure(FIGURES_DIR / "data_balance_boxplots.png")
+
+
 def generate_clustering_figures(
     df: pd.DataFrame,
     metrics_df: pd.DataFrame,
@@ -167,6 +182,22 @@ def generate_rfm_eda_figures(rfm_df: pd.DataFrame) -> None:
     plt.ylabel(labels["monetary_value"])
     plt.title("Recency vs Monetary Value")
     _save_current_figure(ONLINE_RETAIL_FIGURES_DIR / "recency_vs_monetary_scatter.png")
+
+
+def generate_rfm_balance_figures(rfm_df: pd.DataFrame, balanced_rfm_df: pd.DataFrame) -> None:
+    comparison = pd.concat(
+        [
+            rfm_df[RFM_FEATURES].assign(dataset="clean_rfm"),
+            balanced_rfm_df[RFM_FEATURES].assign(dataset="balanced_rfm"),
+        ],
+        ignore_index=True,
+    )
+    melted = comparison.melt(id_vars="dataset", var_name="feature", value_name="value")
+    plt.figure(figsize=(10, 5))
+    sns.boxplot(data=melted, x="feature", y="value", hue="dataset")
+    plt.yscale("log")
+    plt.title("Online Retail RFM Balance: Before vs After")
+    _save_current_figure(ONLINE_RETAIL_FIGURES_DIR / "rfm_balance_boxplots.png")
 
 
 def generate_rfm_clustering_figures(

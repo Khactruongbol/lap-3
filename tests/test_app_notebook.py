@@ -20,6 +20,7 @@ def test_final_notebook_contains_required_sections():
         "Define Problem",
         "Data Sources",
         "Data Cleaning Summary",
+        "Workflow and Data Balancing",
         "Feature Scaling and Model Training",
         "Program and Model Summary",
         "Final Conclusion",

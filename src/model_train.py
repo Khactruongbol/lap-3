@@ -25,9 +25,8 @@ from config import (
     ONLINE_RETAIL_MODEL_FILE,
 )
 from src.clustering import ClusteringCandidate, run_all_clustering, save_candidates
-from src.data_quality import load_clean_data
+from src.data_balance import load_balanced_mall_data, load_balanced_rfm_data
 from src.evaluation import attach_best_labels, evaluate_candidates, select_best_candidate
-from src.online_retail import load_rfm_data
 from src.preprocessing import FeatureSet, build_feature_sets, build_rfm_feature_sets
 from src.reporting import (
     build_cluster_profile,
@@ -72,7 +71,7 @@ def save_model_artifact(
 
 
 def train_mall_model() -> dict[str, Any]:
-    clean_df = load_clean_data()
+    clean_df = load_balanced_mall_data()
     feature_sets = build_feature_sets(clean_df)
     candidates = run_all_clustering(feature_sets)
     save_candidates(candidates, CANDIDATES_CSV, CANDIDATES_JSON)
@@ -103,7 +102,7 @@ def train_mall_model() -> dict[str, Any]:
 
 
 def train_online_retail_model() -> dict[str, Any]:
-    rfm_df = load_rfm_data()
+    rfm_df = load_balanced_rfm_data()
     feature_sets = build_rfm_feature_sets(rfm_df)
     candidates = run_all_clustering(feature_sets)
     save_candidates(candidates, ONLINE_RETAIL_CANDIDATES_CSV, ONLINE_RETAIL_CANDIDATES_JSON)

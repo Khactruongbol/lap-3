@@ -1,0 +1,98 @@
+{
+  "dataset": "mall",
+  "strategy": "remove_iqr_outliers_for_training_only",
+  "reason": "Distance-based clustering is sensitive to extreme values; raw and clean data are preserved separately.",
+  "original_rows": 200,
+  "balanced_rows": 198,
+  "removed_rows": 2,
+  "removed_ratio": 0.01,
+  "removed_customer_ids": [
+    199,
+    200
+  ],
+  "rules": {
+    "age": {
+      "method": "iqr_1_5",
+      "lower_bound": -1.625,
+      "upper_bound": 79.375,
+      "removed_rows": 0
+    },
+    "annual_income_k": {
+      "method": "iqr_1_5",
+      "lower_bound": -13.25,
+      "upper_bound": 132.75,
+      "removed_rows": 2
+    },
+    "spending_score": {
+      "method": "iqr_1_5",
+      "lower_bound": -22.625,
+      "upper_bound": 130.375,
+      "removed_rows": 0
+    }
+  },
+  "summary_before": {
+    "age": {
+      "count": 200.0,
+      "mean": 38.85,
+      "std": 13.96900733155888,
+      "min": 18.0,
+      "25%": 28.75,
+      "50%": 36.0,
+      "75%": 49.0,
+      "max": 70.0
+    },
+    "annual_income_k": {
+      "count": 200.0,
+      "mean": 60.56,
+      "std": 26.264721165271244,
+      "min": 15.0,
+      "25%": 41.5,
+      "50%": 61.5,
+      "75%": 78.0,
+      "max": 137.0
+    },
+    "spending_score": {
+      "count": 200.0,
+      "mean": 50.2,
+      "std": 25.823521668370173,
+      "min": 1.0,
+      "25%": 34.75,
+      "50%": 50.0,
+      "75%": 73.0,
+      "max": 99.0
+    }
+  },
+  "summary_after": {
+    "age": {
+      "count": 198.0,
+      "mean": 38.92929292929293,
+      "std": 14.016851732555248,
+      "min": 18.0,
+      "25%": 28.25,
+      "50%": 36.0,
+      "75%": 49.0,
+      "max": 70.0
+    },
+    "annual_income_k": {
+      "count": 198.0,
+      "mean": 59.78787878787879,
+      "std": 25.237259026949715,
+      "min": 15.0,
+      "25%": 40.5,
+      "50%": 61.0,
+      "75%": 77.75,
+      "max": 126.0
+    },
+    "spending_score": {
+      "count": 198.0,
+      "mean": 50.196969696969695,
+      "std": 25.746846259173054,
+      "min": 1.0,
+      "25%": 35.0,
+      "50%": 50.0,
+      "75%": 72.75,
+      "max": 99.0
+    }
+  },
+  "synthetic_rows_added": 0
+}
