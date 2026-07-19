@@ -9,11 +9,9 @@ import pandas as pd
 from config import (
     BEST_MODEL_JSON,
     CLUSTER_PROFILE_CSV,
-    DATA_BALANCE_REPORT,
     DATA_QUALITY_REPORT,
     DATA_SOURCE_LOG,
     FINAL_NOTEBOOK,
-    ONLINE_RETAIL_BALANCE_REPORT,
     ONLINE_RETAIL_BEST_MODEL_JSON,
     ONLINE_RETAIL_CLUSTER_PROFILE_CSV,
     ONLINE_RETAIL_QUALITY_REPORT,
@@ -89,30 +87,6 @@ def _best_model_summary(best: dict[str, Any]) -> str:
             {"Metric": "Silhouette score", "Value": best.get("silhouette_score", "N/A")},
             {"Metric": "Davies-Bouldin score", "Value": best.get("davies_bouldin_score", "N/A")},
             {"Metric": "Calinski-Harabasz score", "Value": best.get("calinski_harabasz_score", "N/A")},
-        ]
-    )
-    return _table(rows)
-
-
-def _balance_summary(mall_balance: dict[str, Any], online_balance: dict[str, Any]) -> str:
-    rows = pd.DataFrame(
-        [
-            {
-                "Dataset": "Mall Customers",
-                "Original rows": mall_balance.get("original_rows", "N/A"),
-                "Balanced rows": mall_balance.get("balanced_rows", "N/A"),
-                "Removed rows": mall_balance.get("removed_rows", "N/A"),
-                "Synthetic rows added": mall_balance.get("synthetic_rows_added", "N/A"),
-                "Strategy": mall_balance.get("strategy", "N/A"),
-            },
-            {
-                "Dataset": "Online Retail RFM",
-                "Original rows": online_balance.get("original_rows", "N/A"),
-                "Balanced rows": online_balance.get("balanced_rows", "N/A"),
-                "Removed rows": online_balance.get("removed_rows", "N/A"),
-                "Synthetic rows added": online_balance.get("synthetic_rows_added", "N/A"),
-                "Strategy": online_balance.get("strategy", "N/A"),
-            },
         ]
     )
     return _table(rows)
@@ -269,8 +243,6 @@ ONLINE_RETAIL_FIGURES = [
 def write_final_notebook() -> Path:
     mall_quality = _read_json(DATA_QUALITY_REPORT)
     online_quality = _read_json(ONLINE_RETAIL_QUALITY_REPORT)
-    mall_balance = _read_json(DATA_BALANCE_REPORT)
-    online_balance = _read_json(ONLINE_RETAIL_BALANCE_REPORT)
     mall_best = _read_json(BEST_MODEL_JSON)
     online_best = _read_json(ONLINE_RETAIL_BEST_MODEL_JSON)
     sources = _read_csv(DATA_SOURCE_LOG)
@@ -343,37 +315,8 @@ Chương trình sử dụng hai nguồn raw data:
 """
         ),
         _markdown(
-            f"""
-## 4. Workflow and Data Balancing
-
-Workflow của chương trình được kiểm soát theo đúng trọng tâm bài toán clustering:
-
-1. **Data Acquisition:** lấy Mall Customers làm dataset chính và Online Retail làm raw transaction extension.
-2. **Data Cleaning:** chuẩn hóa schema, loại missing/duplicate/invalid transaction và lưu quality reports.
-3. **Data Balancing:** kiểm tra outlier/skew trước khi train. Chương trình không sinh synthetic customers; nếu feature lệch quá mạnh, row cực trị chỉ bị loại khỏi training dataset, còn raw/clean data vẫn được giữ lại.
-4. **Feature Scaling:** scale numeric features bằng `StandardScaler`; Online Retail có thêm `rfm_log` để giảm ảnh hưởng độ lệch.
-5. **Clustering:** train K-Means, Agglomerative/Hierarchical và DBSCAN trên các feature sets hợp lệ.
-6. **Evaluation:** so sánh silhouette, Davies-Bouldin, Calinski-Harabasz, số cụm và khả năng giải thích.
-7. **Artifacts:** xuất model `.joblib`, metrics CSV/JSON, cluster profile tables, figures, Streamlit UI và notebook báo cáo cuối.
-
-### Balance Summary
-
-{_balance_summary(mall_balance, online_balance)}
-"""
-        ),
-        _image_cell(
-            "Mall Customers Balance: Before vs After",
-            "../reports/figures/data_balance_boxplots.png",
-            "Hình này so sánh phân bố numeric features trước và sau bước cân bằng. Mall Customers chỉ loại các điểm IQR outlier khỏi training dataset, không sửa raw data.",
-        ),
-        _image_cell(
-            "Online Retail RFM Balance: Before vs After",
-            "../reports/online_retail/figures/rfm_balance_boxplots.png",
-            "Hình này dùng trục log để thấy rõ RFM upper-tail outliers trước và sau cân bằng. Các điểm quá cực trị được loại khỏi training để model không bị chi phối bởi một vài khách hàng giao dịch bất thường.",
-        ),
-        _markdown(
             """
-## 5. Mall Customers EDA
+## 4. Mall Customers EDA
 
 Các hình dưới đây giải thích dữ liệu chính trước khi train model. Đây là phần cần kiểm soát để biết dữ liệu có missing/outlier/phân bố bất thường hay không.
 """
@@ -384,7 +327,7 @@ Các hình dưới đây giải thích dữ liệu chính trước khi train mod
     cells.append(
         _markdown(
             """
-## 6. Feature Scaling and Model Training
+## 5. Feature Scaling and Model Training
 
 Clustering dựa trên khoảng cách, vì vậy các feature numeric được chuẩn hóa bằng `StandardScaler`.
 
@@ -409,7 +352,7 @@ Model cuối không được chọn chỉ theo metric. Chương trình ưu tiên
     cells.append(
         _markdown(
             f"""
-## 7. Best Mall Customers Model
+## 6. Best Mall Customers Model
 
 {_best_model_summary(mall_best)}
 
@@ -422,7 +365,7 @@ Model cuối không được chọn chỉ theo metric. Chương trình ưu tiên
     cells.append(
         _markdown(
             """
-## 8. Mall Customers Model Evaluation Figures
+## 7. Mall Customers Model Evaluation Figures
 
 Các hình dưới đây dùng để kiểm soát quá trình chọn số cụm, so sánh model và giải thích kết quả phân cụm cuối.
 """
@@ -432,7 +375,7 @@ Các hình dưới đây dùng để kiểm soát quá trình chọn số cụm,
     cells.append(
         _markdown(
             """
-## 9. Mall Segment Interpretation
+## 8. Mall Segment Interpretation
 
 - `Average Income - Average Spending`: nhóm khách hàng trung bình, phù hợp cho chiến lược duy trì.
 - `High Income - High Spending`: nhóm giá trị cao, có thể ưu tiên chăm sóc hoặc loyalty program.
@@ -445,7 +388,7 @@ Các hình dưới đây dùng để kiểm soát quá trình chọn số cụm,
     cells.append(
         _markdown(
             """
-## 10. Online Retail RFM Extension
+## 9. Online Retail RFM Extension
 
 Track Online Retail dùng raw transaction data để tạo RFM features:
 
@@ -461,7 +404,7 @@ Track này chứng minh chương trình có thể mở rộng sang dữ liệu g
     cells.append(
         _markdown(
             f"""
-## 11. Best Online Retail RFM Model
+## 10. Best Online Retail RFM Model
 
 {_best_model_summary(online_best)}
 
@@ -475,7 +418,7 @@ Track này chứng minh chương trình có thể mở rộng sang dữ liệu g
     cells.append(
         _markdown(
             """
-## 12. Program and Model Summary
+## 11. Program and Model Summary
 
 ### Source Structure
 
@@ -504,7 +447,7 @@ Track này chứng minh chương trình có thể mở rộng sang dữ liệu g
     cells.append(
         _markdown(
             """
-## 13. Final Conclusion
+## 12. Final Conclusion
 
 Chương trình đã đáp ứng các yêu cầu:
 

@@ -4,33 +4,23 @@ import argparse
 
 from config import ensure_directories
 from src.data_acquisition import fetch_all_data, fetch_data, fetch_online_retail_data, require_raw_data
-from src.data_balance import balance_mall_customers, balance_online_retail_rfm
-from src.data_quality import clean_customer_data
+from src.data_quality import clean_customer_data, load_clean_data
 from src.model_train import train_mall_model, train_online_retail_model
 from src.online_retail import load_or_process_online_retail
 from src.reporting import write_notebook_stub
-from src.visualization import (
-    generate_balance_figures,
-    generate_eda_figures,
-    generate_rfm_balance_figures,
-    generate_rfm_eda_figures,
-)
+from src.visualization import generate_eda_figures, generate_rfm_eda_figures
 
 
 def run_mall_eda() -> None:
     raw_file = require_raw_data("mall")
     clean_df = clean_customer_data(raw_file)
-    balanced_df = balance_mall_customers(clean_df)
     generate_eda_figures(clean_df)
-    generate_balance_figures(clean_df, balanced_df)
 
 
 def run_online_retail_eda(force_refresh: bool = False) -> None:
     raw_file = require_raw_data("online_retail")
     rfm_df = load_or_process_online_retail(raw_file, force=force_refresh)
-    balanced_rfm_df = balance_online_retail_rfm(rfm_df)
     generate_rfm_eda_figures(rfm_df)
-    generate_rfm_balance_figures(rfm_df, balanced_rfm_df)
 
 
 def run_eda(dataset: str, force_refresh: bool = False) -> None:

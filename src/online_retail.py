@@ -145,6 +145,10 @@ def build_rfm_features(cleaned_df: pd.DataFrame, write_outputs: bool = True) -> 
             "last_purchase_date",
         ]
     ].sort_values("customer_id").reset_index(drop=True)
+    
+    rfm = remove_rfm_outliers(rfm, columns=["recency_days", "frequency", "monetary_value"])
+    # -------------------------------------
+
     if write_outputs:
         ONLINE_RETAIL_RFM_FILE.parent.mkdir(parents=True, exist_ok=True)
         rfm.to_csv(ONLINE_RETAIL_RFM_FILE, index=False, encoding="utf-8")
@@ -177,3 +181,23 @@ def load_rfm_data(rfm_file: Path = ONLINE_RETAIL_RFM_FILE) -> pd.DataFrame:
         )
     df = pd.read_csv(rfm_file, encoding="utf-8", parse_dates=["last_purchase_date"])
     return df
+
+def remove_rfm_outliers(rfm_df: pd.DataFrame, columns: list[str] = ["recency_days", "frequency", "monetary_value"]) -> pd.DataFrame:
+    """Loại bỏ các dòng có giá trị ngoại lai dựa trên phương pháp IQR."""
+    df_clean = rfm_df.copy()
+    initial_rows = len(df_clean)
+    
+    for col in columns:
+        Q1 = df_clean[col].quantile(0.25)
+        Q3 = df_clean[col].quantile(0.75)
+        IQR = Q3 - Q1
+        
+        # Định nghĩa biên dưới và biên trên (hệ số tiêu chuẩn là 1.5)
+        lower_bound = Q1 - 1.5 * IQR
+        upper_bound = Q3 + 1.5 * IQR
+        
+        # Lọc dữ liệu nằm trong khoảng hợp lệ
+        df_clean = df_clean[(df_clean[col] >= lower_bound) & (df_clean[col] <= upper_bound)]
+    
+    print(f"-> Đã loại bỏ {initial_rows - len(df_clean)} dòng outliers khỏi tập RFM.")
+    return df_clean.reset_index(drop=True)
