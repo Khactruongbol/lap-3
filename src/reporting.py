@@ -8,13 +8,11 @@ import pandas as pd
 from config import (
     BEST_MODEL_JSON,
     CLUSTER_PROFILE_CSV,
-    DATA_BALANCE_REPORT,
     DATA_QUALITY_REPORT,
     DATA_SOURCE_LOG,
     FINAL_NOTEBOOK,
     FINAL_REPORT,
     METRICS_CSV,
-    ONLINE_RETAIL_BALANCE_REPORT,
     ONLINE_RETAIL_BEST_MODEL_JSON,
     ONLINE_RETAIL_CLUSTER_PROFILE_CSV,
     ONLINE_RETAIL_FINAL_REPORT,
@@ -181,7 +179,6 @@ def _dataframe_to_markdown(df: pd.DataFrame) -> str:
 
 def write_final_report(profile_df: pd.DataFrame) -> None:
     quality = _read_json_if_exists(DATA_QUALITY_REPORT)
-    balance = _read_json_if_exists(DATA_BALANCE_REPORT)
     best = _read_json_if_exists(BEST_MODEL_JSON)
     metrics_summary = "Metrics file was not generated."
     if METRICS_CSV.exists():
@@ -211,14 +208,6 @@ This project clusters retail-store customers using age, gender, annual income, a
 
 The pipeline compares three standardized feature sets: income-spending behavior features, numerical features only, and numerical features plus one-hot encoded gender. `customer_id` is excluded from clustering.
 
-## Data Balance Summary
-
-- Original clean rows: {balance.get("original_rows", "not available")}
-- Balanced training rows: {balance.get("balanced_rows", "not available")}
-- Removed outlier rows: {balance.get("removed_rows", "not available")}
-- Synthetic rows added: {balance.get("synthetic_rows_added", "not available")}
-- Strategy: {balance.get("strategy", "not available")}
-
 ## Model Comparison
 
 {metrics_summary}
@@ -247,7 +236,6 @@ The workflow follows the required stages of Data Exploration, Feature Scaling, C
 
 def write_online_retail_report(profile_df: pd.DataFrame) -> None:
     quality = _read_json_if_exists(ONLINE_RETAIL_QUALITY_REPORT)
-    balance = _read_json_if_exists(ONLINE_RETAIL_BALANCE_REPORT)
     best = _read_json_if_exists(ONLINE_RETAIL_BEST_MODEL_JSON)
     metrics_summary = "Metrics file was not generated."
     if ONLINE_RETAIL_METRICS_CSV.exists():
@@ -272,14 +260,6 @@ This is an extended raw-data track for customer segmentation. It uses UCI Online
 ## RFM Feature Summary
 
 Feature sets used for clustering: raw RFM features (`recency_days`, `frequency`, `monetary_value`, `average_order_value`) and log-transformed RFM features. The log-transformed set reduces the dominance of highly skewed transaction values.
-
-## Data Balance Summary
-
-- Original RFM rows: {balance.get("original_rows", "not available")}
-- Balanced training rows: {balance.get("balanced_rows", "not available")}
-- Removed upper-tail rows: {balance.get("removed_rows", "not available")}
-- Synthetic rows added: {balance.get("synthetic_rows_added", "not available")}
-- Strategy: {balance.get("strategy", "not available")}
 
 ## Model Comparison
 
